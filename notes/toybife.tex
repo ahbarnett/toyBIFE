@@ -1,0 +1,174 @@
+\documentclass[10pt]{article}
+\oddsidemargin = 0.2in
+\topmargin = -0.5in
+\textwidth 6in
+\textheight 8.5in
+
+\usepackage{graphicx,bm,hyperref,amssymb,amsmath,amsthm}
+\usepackage{algorithmic,xcolor}
+
+% -------------------------------------- macros --------------------------
+% general ...
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+\newcommand{\ben}{\begin{enumerate}}
+\newcommand{\een}{\end{enumerate}}
+\newcommand{\be}{\begin{equation}}
+\newcommand{\ee}{\end{equation}}
+\newcommand{\bea}{\begin{eqnarray}} 
+\newcommand{\eea}{\end{eqnarray}}
+\newcommand{\ba}{\begin{align}} 
+\newcommand{\ea}{\end{align}}
+\newcommand{\bse}{\begin{subequations}} 
+\newcommand{\ese}{\end{subequations}}
+\newcommand{\bc}{\begin{center}}
+\newcommand{\ec}{\end{center}}
+\newcommand{\bfi}{\begin{figure}}
+\newcommand{\efi}{\end{figure}}
+\newcommand{\ca}[2]{\caption{#1 \label{#2}}}
+\newcommand{\ig}[2]{\includegraphics[#1]{#2}}
+\newcommand{\bmp}[1]{\begin{minipage}{#1}}
+\newcommand{\emp}{\end{minipage}}
+\newcommand{\pig}[2]{\bmp{#1}\includegraphics[width=#1]{#2}\emp} % mp-fig, nogap
+\newcommand{\bp}{\begin{proof}}
+\newcommand{\ep}{\end{proof}}
+\newcommand{\ie}{{\it i.e.\ }}
+\newcommand{\eg}{{\it e.g.\ }}
+\newcommand{\etal}{{\it et al.\ }}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pdc}[3]{\left. \frac{\partial #1}{\partial #2}\right|_{#3}}
+\newcommand{\infint}{\int_{-\infty}^{\infty} \!\!}      % infinite integral
+\newcommand{\tbox}[1]{{\mbox{\tiny #1}}}
+\newcommand{\mbf}[1]{{\mathbf #1}}
+\newcommand{\half}{\mbox{\small $\frac{1}{2}$}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\RR}{\mathbb{R}^2}
+\newcommand{\ve}[4]{\left[\begin{array}{r}#1\\#2\\#3\\#4\end{array}\right]}  % 4-col-vec
+\newcommand{\vt}[2]{\left[\begin{array}{r}#1\\#2\end{array}\right]} % 2-col-vec
+\newcommand{\bigO}{{\mathcal O}}
+\newcommand{\qqquad}{\qquad\qquad}
+\newcommand{\qqqquad}{\qqquad\qqquad}
+\DeclareMathOperator{\Span}{Span}
+\DeclareMathOperator{\im}{Im}
+\DeclareMathOperator{\re}{Re}
+\DeclareMathOperator{\vol}{vol}
+\newtheorem{thm}{Theorem}
+\newtheorem{cnj}[thm]{Conjecture}
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{pro}[thm]{Proposition}
+\newtheorem{rmk}[thm]{Remark}
+\newtheorem{dfn}[thm]{Definition}
+% this work...
+\newcommand{\al}{\alpha}
+\newcommand{\bt}{\beta}
+\newcommand{\eps}{\varepsilon}
+
+
+\begin{document}
+
+\title{Toy models for validation of Bayesian inference of free energy and path selection}
+
+\author{Alex H. Barnett}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+  We need to be able to test ideas for a Bayesian string method for path selection given cryo particle images.
+  Here are some toy models and their tests.
+\end{abstract}
+
+Some standard Bayesian principles:
+\ben
+\item
+A model for what processes create the observations
+should be built, then unknowns in this model should be treated as
+random variables (if possible), and their posterior be sampled
+via inference on this same model.
+\item
+Validation should be done from data simulated from the same model,
+to ensure that the inference procedure is consistent (the true values
+fall within the inferred posterior ranges). This is the
+probabilistic
+equivalent of testing a numerical algorithm on a known solution.
+\een
+
+Note that the idea of extracting a 1D path from a higher-dim conformation
+space
+doesn't match principle 1, since the model (higher-dim conformation samples)
+differs from that which will be fit (conformations restricted to a 1D path).
+To do: fix this, maybe by allowing the 
+
+
+\section{Warm-up toy problem: direct conformation observation}
+
+Let $x\in\R^n$ be the conformational space.
+If $n=1$ then we have an equivalent problem to inference of a
+free energy function $G(x)$ of a single variable $x$ (called $s$ in our
+paper).
+If $n=2$ (typical), then $x = (x_1,x_2)$, for instance (CMA,CMB).
+For general $n$, the model is: $G(x)$ is an unknown function over
+some region $x\in\Omega \subset \R^n$, assumed smooth.
+Conformations $x_i$ are iid sampled from the
+Boltzmann (=Gibbs) density. Ie, $x_1,\dots, x_N \sim \rho$, where
+\be
+\rho(x) = Z^{-1} e^{-\bt G(x)}~, \qquad x\in\Omega~,
+\label{boltz}
+\ee
+where $Z := \int_\Omega e^{-\bt G(x)} dx$.
+This distribution model basically defines the concept of free energy
+(including for a $n=1$ path).
+The goal is to recover $G$, up to an additive constant,
+equivalent to recovering $\rho$.
+
+Say we observe $x_i$ directly.
+A probabilistic graphical model is a useful way to summarize this;
+see Fig.~\ref{f:graphs}(a).
+Then we have a {\em density estimation} problem for $\rho$,
+very standard in statistics.
+There are nonparametric methods: histogram the samples into predetermined bins,
+smooth them with kernels, etc.
+This needs a lot of samples for $n>1$ dimensions.
+There are parametric methods where $\rho$ stays within
+a family, whose parameters are inferred (eg, a max-likelihood
+point estimate, or Bayesian posterior over parameters).
+
+Parametric and nonparametric blur:
+Eg, histogramming may be viewed as a max-likelihood point estimate
+for a piecewise-constant parameterization of $\rho$.
+Eg, there are Bayesian kernel density methods (Sibisi--Skilling 96).
+
+Todo: read Dirichlet processes,
+read Kathleen Rey 18 thesis whose GOLD method infers $G$ above
+as a GP.
+
+
+
+\bfi[t]
+\ig{width=6in}{graphs}
+\ca{Probabilistic graphical models for toy and real problems.
+  A box with $N$ in the corner indicates iid repeated measurements
+  $i=1,\dots,N$. See above for other key.
+  Note that $G$ and $\rho$ are functions not just variables.
+  (a) Direct observation of conformations. (b) Indirect observation
+  of ``images'' given by a deterministic function $f(x)$ of the conformation
+  plus noise. (c) Cryo-BIFE similar to (b) but with latent imaging parameters
+  ($\theta$ is angles, translations, intensity offsets).
+  }{f:graphs}
+\efi
+
+
+
+
+
+
+
+
+% BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+\bibliographystyle{abbrv}
+\bibliography{localrefs}
+\end{document}
+
