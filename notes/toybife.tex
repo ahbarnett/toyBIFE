@@ -65,6 +65,7 @@
 % this work...
 \newcommand{\al}{\alpha}
 \newcommand{\bt}{\beta}
+\newcommand{\bal}{{\bm\alpha}}
 \newcommand{\eps}{\varepsilon}
 
 
@@ -84,10 +85,11 @@
 Some standard Bayesian principles:
 \ben
 \item
-A model for what processes create the observations
+A model for what processes create the observations (data)
 should be built, then unknowns in this model should be treated as
-random variables (if possible), and their posterior be sampled
-via inference on this same model.
+random variables (if possible), and their posterior is then
+prescribed by this same model given the data. The posterior on the unknowns
+should be sampled, fit (via VI), or summarized (its peak found, etc).
 \item
 Validation should be done from data simulated from the same model,
 to ensure that the inference procedure is consistent (the true values
@@ -100,50 +102,10 @@ Note that the idea of extracting a 1D path from a higher-dim conformation
 space
 doesn't match principle 1, since the model (higher-dim conformation samples)
 differs from that which will be fit (conformations restricted to a 1D path).
-To do: fix this, maybe by allowing the 
+To do: fix this, maybe by allowing a variable transverse covariance matrix to
+be fit along with the path.
 
 
-\section{Warm-up toy problem: direct conformation observation}
-
-Let $x\in\R^n$ be the conformational space.
-If $n=1$ then we have an equivalent problem to inference of a
-free energy function $G(x)$ of a single variable $x$ (called $s$ in our
-paper).
-If $n=2$ (typical), then $x = (x_1,x_2)$, for instance (CMA,CMB).
-For general $n$, the model is: $G(x)$ is an unknown function over
-some region $x\in\Omega \subset \R^n$, assumed smooth.
-Conformations $x_i$ are iid sampled from the
-Boltzmann (=Gibbs) density. Ie, $x_1,\dots, x_N \sim \rho$, where
-\be
-\rho(x) = Z^{-1} e^{-\bt G(x)}~, \qquad x\in\Omega~,
-\label{boltz}
-\ee
-where $Z := \int_\Omega e^{-\bt G(x)} dx$.
-This distribution model basically defines the concept of free energy
-(including for a $n=1$ path).
-The goal is to recover $G$, up to an additive constant,
-equivalent to recovering $\rho$.
-
-Say we observe $x_i$ directly.
-A probabilistic graphical model is a useful way to summarize this;
-see Fig.~\ref{f:graphs}(a).
-Then we have a {\em density estimation} problem for $\rho$,
-very standard in statistics.
-There are nonparametric methods: histogram the samples into predetermined bins,
-smooth them with kernels, etc.
-This needs a lot of samples for $n>1$ dimensions.
-There are parametric methods where $\rho$ stays within
-a family, whose parameters are inferred (eg, a max-likelihood
-point estimate, or Bayesian posterior over parameters).
-
-Parametric and nonparametric blur:
-Eg, histogramming may be viewed as a max-likelihood point estimate
-for a piecewise-constant parameterization of $\rho$.
-Eg, there are Bayesian kernel density methods (Sibisi--Skilling 96).
-
-Todo: read Dirichlet processes,
-read Kathleen Rey 18 thesis whose GOLD method infers $G$ above
-as a GP.
 
 
 
@@ -155,12 +117,174 @@ as a GP.
   Note that $G$ and $\rho$ are functions not just variables.
   (a) Direct observation of conformations. (b) Indirect observation
   of ``images'' given by a deterministic function $f(x)$ of the conformation
-  plus noise. (c) Cryo-BIFE similar to (b) but with latent imaging parameters
-  ($\theta$ is angles, translations, intensity offsets).
+  plus noise. (c) Cryo-BIFE, similar to (b) but with latent imaging parameters
+  ($\theta$ is angles, translations, intensity offsets, etc).
   }{f:graphs}
 \efi
 
 
+
+
+
+% 11111111111111111111111111111111111111111111111111111111111111111111111111111
+\section{Warm-up toy problem: direct observation of conformations}
+
+Let $x\in\R^n$ be the conformational space.
+If $n=1$ then we have an equivalent problem to inference of a
+free energy function $G(x)$ of a single variable $x$ (called $s$ in our
+paper).
+If $n=2$ (typical), then $x$ could be $(x,y)$, for instance (CMA,CMB).
+For general $n$, the model is: $G(x)$ is an unknown function over
+some region $x\in\Omega \subset \R^n$, assumed smooth.
+Let $\bt>0$ be the dimensionless inverse temperature.
+Conformations $x_i$ are iid sampled from the
+Boltzmann (=\,Gibbs) density. Ie, $x_1,\dots, x_N \sim \rho$, where
+\be
+\rho(x) = Z^{-1} e^{-\bt G(x)}~, \qquad x\in\Omega~,
+\label{boltz}
+\ee
+where $Z := \int_\Omega e^{-\bt G(x)} dx$.
+This distribution model basically defines the concept of free energy
+(including for a $n=1$ path).
+The goal is to recover $G$, up to an additive constant,
+equivalent to recovering $\rho$.
+
+Say we observe the data $D := \{x_i\}$ directly.
+A probabilistic graphical model is a useful way to summarize this;
+see Fig.~\ref{f:graphs}(a).
+Then we have a {\em density estimation} problem for $\rho$,
+a standard task in statistics.
+
+\begin{rmk}[density estimation]
+There are nonparametric methods: histogram the samples into predetermined bins,
+smooth them with kernels, etc.
+This needs a lot of samples for $n>1$ dimensions.
+There are parametric methods where $\rho$ stays within
+a family, whose parameters are inferred (eg, a max-likelihood
+point estimate, or Bayesian posterior over parameters).
+There is no hard line between parametric and nonparametric:
+eg, histogramming may be viewed as a max-likelihood point estimate
+for a piecewise-constant parameterization of $\rho$.
+Also there are Bayesian kernel density methods (Sibisi--Skilling 96).
+Todo: read Dirichlet processes.
+\end{rmk}
+
+\begin{rmk}[no path optimization]
+Note we don't get to test path optimization here, since if conformations
+come from $\R^n$, for $n>1$, they are generally inconsistent with any 1D path
+without an intermediate noise model as in the next section.
+\end{rmk}
+
+The likelihood is $p(D|G) = \prod_i \rho(x_i)$, so its negative log is
+\be
+-\ln p(D|G) = \sum_i \ln \rho(x_i) = N \ln Z + \bt \sum_i G(x_i)~.
+\label{nll}
+\ee
+Let's parameterize the free energy
+\footnote{This is similar to GOLD method from Kathleen Rey 18 thesis, but
+  there $G$ is a GP.}
+with $p$ fixed basis functions,
+in the $n=1$ dim case on $[0,1]$,
+\be
+G(x) = \sum_{j=1}^p \al_j \phi_j(x)~,\qquad  0\le x \le 1~.
+\label{basis}
+\ee
+Then
+for the normalizing constant
+we use a $Q$-node quadrature approximation
+with nodes $x_q$ and weights $v_q$, $q=1,\dots,Q$,
+\bea
+Z &= &\int_0^1 e^{-\bt \sum_j \al_j \phi_j(x)} dx
+\label{Z1}
+\\
+&\approx&
+\sum_{q=1}^Q v_q e^{-\bt \sum_j \al_j \phi_j(x_q)} = 
+\mbf{v}^T \exp (-\bt B \bal)
+\eea
+where $\mbf{v} := \{v_q\}_{q=1}^Q$
+and $\bal := \{\al_j\}_{j=1}^p$
+are column vectors, and
+$B \in \R^{Q\times p}$ a fixed basis-quadrature matrix with entries
+$B_{qj}:= \phi_j(x_q)$. Here exp is taken to act elementwise.
+
+In terms of the coefficient vector $\bal$, then, up to quadrature
+error,
+\be
+- \ln p(D|G) \approx
+N \ln [\mbf{v}^T \exp (-\bt B \bal)]
++ \bt \mbf{d}^T \bal
+\label{nllbas}
+=: L(\bal)
+\ee
+where $\mbf{d}$ is a data-basis vector with entries
+$d_j := \sum_i \phi_j(x_i)$ that needs computing only once.
+
+Assuming a flat prior over $\bal$, the negative log posterior $U(\bal)$
+is given by \eqref{nllbas}, which is the potential function in HMC.
+The MAP estimate is $\bal_*:=\arg\min_{\bal\in\R^p} U(\bal)$.
+One could sample from the posterior $\pi(\bal):=e^{-U(\bal)}$ by MCMC,
+then summarize by iid samples or posterior mean, etc.
+There will be numerical speedups by exploiting locality of
+basis functions, or properties of exp.
+
+To do: code up HMC here, using either $\phi_j$ continuous piecewise
+linear hat-functions, or something higher-order but still well-conditioned.
+Conditioning is crucial for success of MCMC.
+Check the posterior quantiles contain the true value the expected fraction
+of the time.
+
+\begin{rmk}[Additive constant in $G$]
+  Although adding $c$ to $G$ multiplies $Z$ by $e^{-\bt c}$, in a predictable way,
+  it is in general not true that $G$ having zero mean implies $Z=1$.
+  Pilar is right that $Z$ must be computed to perform MCMC correctly.
+  \end{rmk}
+
+
+
+
+% 2222222222222222222222222222222222222222222222222222222222222222222222222222
+\section{Indirect observations of conformations via ``images'' without
+latent parameters}
+
+Here we use ``image'' in the abstract to mean a vector
+$w\in \R^P$ derived from a conformation $x$ with a known conditional
+pdf $p_\tbox{im}(w|x)$.
+For an image, $P$ is the number of pixels.
+The full model is now $x_i,\dots,x_N \sim \rho$, iid, then
+$w_i \sim p_\tbox{im}(\cdot | x_i)$ for each $i$.
+Only $w_i$ are observed, not $x_i$.
+
+For any additive-noise ``imaging'' model we have the likelihood
+$$
+p_\tbox{im}(w | x) = p_\tbox{noise}(w - f(x))
+$$
+where $y=f(x)$ is the deterministic {\em forward model} for the image.
+$p_\tbox{noise}$ could be a Gaussian with zero mean and variance $\sigma^2$,
+another known parameter.
+See Fig.~\ref{f:graphs}(b).
+Note that this doesn't cover all cases of $p_\tbox{im}(w|x)$ such as a Poisson noise
+model.
+
+The toy idea is to make $P$ small, eg, 1, and test
+consistency for a simple map $f$, which could be the identity map.
+This would also allow tests of path-selection methods, where
+the path is 1D in $R^2$.
+
+We first derive the posterior.
+
+
+
+
+
+
+\section{Observation of images which also have latent parameters}
+
+The latent parameters summarized by $\theta$ include:
+rotation in SO(3), translation, and any other.
+Each particle image $i$ gets a different draw $\theta_i$.
+See Fig.~\ref{f:graphs}(c).
+This is as in cryo-BIFE.
+It has the complication that $\theta$ must be marginalized over.
 
 
 
