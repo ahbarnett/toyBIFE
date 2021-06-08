@@ -28,9 +28,9 @@ Output: log-L of individual images and final line total log-L.
 Files in folder:
 * cryoBIFE.py: MCMC from paper using Alex's logsumexp function. 
 Run:  python3.6 cryoBIFE.py [FILE\_PATH] > LogL-[FILE\_PATH]
-an additional output file Gs has the Gs for each MCMC step.
+Output: LogL-[FILE\_PATH] logL at each MCMC step, an additional output file "Gs" has the Gs at each MCMC step.
 * get-max.sh: bash script to get Gs that maximize Log-L. 
 Run: ./get-max.sh LogL-[FILE\_PATH] 
-* Check-logsumexp: Checking the result from using Alex's routine and the old correct one we had (see commented-out line 148 - 160)
+* Check-logsumexp: Checking the results from using Alex's routine and the old (correct) one that we had (see commented-out line 148 - 160)
 * all\_images: same as above.
 * Path-black and Path-orange: same as above.
