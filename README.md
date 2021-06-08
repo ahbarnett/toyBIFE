@@ -5,7 +5,7 @@ Alex Barnett, June 2021.
 
 See ``notes`` and ``code``.
 
-Added a new folder 2DHsp90 with 3 subfolders:
+Added a new folder **2DHsp90** with 3 subfolders:
 
 ## FES: Data for vizualizing the 2D distribution or free energy surface.
 Files in folder:
@@ -14,7 +14,7 @@ Files in folder:
  Run: python3.6 2D-FES\_plot.py 
  Output: 3-wells-paths.png
 
-## LikeLihood: Data for calculating the log-likelihood given a predetermined path and G that maximizes the cryoBIFE likelilood.
+## LikeLihood: Data for calculating the log-likelihood given a predetermined path and G that maximizes it.
 Files in folder:
 * likelihood\_calc.py: calculates the log-L (total and for each image) given a path and Gmax. 
 Run: python3.6 likelihood\_calc.py [FILE\_PATH] [FILE\_GMAX] > Log-L-image
@@ -31,5 +31,6 @@ Run:  python3.6 cryoBIFE.py [FILE\_PATH] > LogL-[FILE\_PATH]
 an additional output file Gs has the Gs for each MCMC step.
 * get-max.sh: bash script to get Gs that maximize Log-L. 
 Run: ./get-max.sh LogL-[FILE\_PATH] 
+* Check-logsumexp: Checking the result from using Alex's routine and the old correct one we had (see commented-out line 148 - 160)
 * all\_images: LogP BioEM for all images (rows) and the 225 models (columns) within the green square (slide 8 alexdiscussion.pdf; typo there not 200 but 225)
 * Path-black and Path-orange: Node indexes (following Julian's notation) of the black and orange paths
