@@ -32,5 +32,5 @@ an additional output file Gs has the Gs for each MCMC step.
 * get-max.sh: bash script to get Gs that maximize Log-L. 
 Run: ./get-max.sh LogL-[FILE\_PATH] 
 * Check-logsumexp: Checking the result from using Alex's routine and the old correct one we had (see commented-out line 148 - 160)
-* all\_images: LogP BioEM for all images (rows) and the 225 models (columns) within the green square (slide 8 alexdiscussion.pdf; typo there not 200 but 225)
-* Path-black and Path-orange: Node indexes (following Julian's notation) of the black and orange paths
+* all\_images: same as above.
+* Path-black and Path-orange: same as above.
