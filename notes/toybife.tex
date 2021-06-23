@@ -79,7 +79,8 @@
 
 \begin{abstract}
   We need to be able to test ideas for a Bayesian string method for path selection given cryo particle images.
-  Here are some toy models and their tests.
+  We also need to be able to understand why Pilar+Julian's path selection is giving strange results.
+  Here are some toy models and their proposed tests.
 \end{abstract}
 
 Some standard Bayesian principles:
@@ -89,7 +90,7 @@ A model for what processes create the observations (data)
 should be built, then unknowns in this model should be treated as
 random variables (if possible), and their posterior is then
 prescribed by this same model given the data. The posterior on the unknowns
-should be sampled, fit (via VI), or summarized (its peak found, etc).
+should be sampled, or fit (via VI), or summarized (its MAP peak found, etc).
 \item
 Validation should be done from data simulated from the same model,
 to ensure that the inference procedure is consistent (the true values
@@ -100,10 +101,11 @@ equivalent of testing a numerical algorithm on a known solution.
 
 Note that the idea of extracting a 1D path from a higher-dim conformation
 space
-doesn't match principle 1, since the model (higher-dim conformation samples)
+already doesn't match principle 1, since the model (higher-dim conformation samples)
 differs from that which will be fit (conformations restricted to a 1D path).
-To do: fix this, maybe by allowing a variable transverse covariance matrix to
-be fit along with the path.
+
+{\em To do: consider a fix by allowing a variable transverse covariance matrix to
+be fit along with the path---why is this not of interest?}
 
 
 
@@ -113,10 +115,10 @@ be fit along with the path.
 \ig{width=6in}{graphs}
 \ca{Probabilistic graphical models for toy and real problems.
   A box with $N$ in the corner indicates iid repeated measurements
-  $i=1,\dots,N$. See above for other key.
-  Note that $G$ and $\rho$ are functions not just variables.
+  $i=1,\dots,N$. See above for other key, which is standard in PGMs, apparently.
+  Note that $G$ and $\rho$ are functions, not just variables.
   (a) Direct observation of conformations. (b) Indirect observation
-  of ``images'' given by a deterministic function $f(x)$ of the conformation
+  of ``images'' (vectors) given by some deterministic function $f(x)$ of the conformation
   plus noise. (c) Cryo-BIFE, similar to (b) but with latent imaging parameters
   ($\theta$ is angles, translations, intensity offsets, etc).
   }{f:graphs}
@@ -132,10 +134,12 @@ be fit along with the path.
 Let $x\in\R^n$ be the conformational space.
 If $n=1$ then we have an equivalent problem to inference of a
 free energy function $G(x)$ of a single variable $x$ (called $s$ in our
-paper).
-If $n=2$ (typical), then $x$ could be $(x,y)$, for instance (CMA,CMB).
-For general $n$, the model is: $G(x)$ is an unknown function over
-some region $x\in\Omega \subset \R^n$, assumed smooth.
+paper), except its simpler because there's no projection down from higher
+dimensions.
+If $n=2$ (typical for Pilar's group), then $x$ could be $(x,y)$, for instance (CMA,CMB
+For general $n$, the model is: $G(x)$, $x\in\Omega$
+is an unknown smooth function over some known
+region $\Omega \subset \R^n$.
 Let $\bt>0$ be the dimensionless inverse temperature.
 Conformations $x_i$ are iid sampled from the
 Boltzmann (=\,Gibbs) density. Ie, $x_1,\dots, x_N \sim \rho$, where
@@ -144,12 +148,15 @@ Boltzmann (=\,Gibbs) density. Ie, $x_1,\dots, x_N \sim \rho$, where
 \label{boltz}
 \ee
 where $Z := \int_\Omega e^{-\bt G(x)} dx$.
-This distribution model basically defines the concept of free energy
-(including for a $n=1$ path).
-The goal is to recover $G$, up to an additive constant,
+This distribution model basically defines the concept of free energy.
+%(including for a $n=1$ path as in our paper).
+The goal is to recover $G$ in $\Omega$, up to an additive constant,
 equivalent to recovering $\rho$.
+We are not trying to restrict things to a path here, just work in the
+ambient dimension $n$ that we believe captures the configurations.
 
-Say we observe the data $D := \{x_i\}$ directly.
+The reason we can do this is that in this toy model
+we observe the data $D := \{x_i\}$ directly.
 A probabilistic graphical model is a useful way to summarize this;
 see Fig.~\ref{f:graphs}(a).
 Then we have a {\em density estimation} problem for $\rho$,
@@ -158,19 +165,19 @@ a standard task in statistics.
 \begin{rmk}[density estimation]
 There are nonparametric methods: histogram the samples into predetermined bins,
 smooth them with kernels, etc.
-This needs a lot of samples for $n>1$ dimensions.
+This needs a lot of samples if we're in $n>1$ dimensions.
 There are parametric methods where $\rho$ stays within
 a family, whose parameters are inferred (eg, a max-likelihood
 point estimate, or Bayesian posterior over parameters).
 There is no hard line between parametric and nonparametric:
 eg, histogramming may be viewed as a max-likelihood point estimate
 for a piecewise-constant parameterization of $\rho$.
-Also there are Bayesian kernel density methods (Sibisi--Skilling 96).
+Also there are Bayesian kernel density methods (eg Sibisi--Skilling '96).
 Todo: read Dirichlet processes.
 \end{rmk}
 
 \begin{rmk}[no path optimization]
-Note we don't get to test path optimization here, since if conformations
+To be clear, we don't get to test path optimization here, since if conformations
 come from $\R^n$, for $n>1$, they are generally inconsistent with any 1D path
 without an intermediate noise model as in the next section.
 \end{rmk}
@@ -181,7 +188,7 @@ The likelihood is $p(D|G) = \prod_i \rho(x_i)$, so its negative log is
 \label{nll}
 \ee
 Let's parameterize the free energy
-\footnote{This is similar to GOLD method from Kathleen Rey 18 thesis, but
+\footnote{This is similar to GOLD method from Kathleen Rey '18 thesis, but
   there $G$ is a GP.}
 with $p$ fixed basis functions,
 in the $n=1$ dim case on $[0,1]$,
@@ -219,19 +226,24 @@ N \ln [\mbf{v}^T \exp (-\bt B \bal)]
 where $\mbf{d}$ is a data-basis vector with entries
 $d_j := \sum_i \phi_j(x_i)$ that needs computing only once.
 
-Assuming a flat prior over $\bal$, the negative log posterior $U(\bal)$
-is given by \eqref{nllbas}, which is the potential function in HMC.
+We want the posterior $\pi(G|D)$.
+Assuming a flat prior over $\bal$, the negative log posterior
+$U(\bal) := -\log \pi(G|D) = -\log p(D|G) + \mbox{const}$,
+which is \eqref{nllbas} up to a constant.
+$U$ becomes the potential function in MCMC sampling over $\bal$.
 The MAP estimate is $\bal_*:=\arg\min_{\bal\in\R^p} U(\bal)$.
-One could sample from the posterior $\pi(\bal):=e^{-U(\bal)}$ by MCMC,
+One could sample from the posterior $\pi(\bal):=e^{-U(\bal)}$ by HMC,
 then summarize by iid samples or posterior mean, etc.
 There will be numerical speedups by exploiting locality of
 basis functions, or properties of exp.
 
+{\em 
 To do: code up HMC here, using either $\phi_j$ continuous piecewise
 linear hat-functions, or something higher-order but still well-conditioned.
 Conditioning is crucial for success of MCMC.
 Check the posterior quantiles contain the true value the expected fraction
 of the time.
+}
 
 \begin{rmk}[Additive constant in $G$]
   Although adding $c$ to $G$ multiplies $Z$ by $e^{-\bt c}$, in a predictable way,
@@ -243,18 +255,18 @@ of the time.
 
 
 % 2222222222222222222222222222222222222222222222222222222222222222222222222222
-\section{Indirect observations of conformations via ``images'' without
+\section{Indirect observations of conformations via noisy ``images'' without
 latent parameters}
 
 Here we use ``image'' in the abstract to mean a vector
 $w\in \R^P$ derived from a conformation $x$ with a known conditional
-pdf $p_\tbox{im}(w|x)$.
+pdf $p_\tbox{im}(w|x)$, which is the imaging plus noise model (likelihood).
 For an image, $P$ is the number of pixels.
 The full model is now $x_i,\dots,x_N \sim \rho$, iid, then
 $w_i \sim p_\tbox{im}(\cdot | x_i)$ for each $i$.
-Only $w_i$ are observed, not $x_i$.
+Only $w_i$ are observed, not $x_i$, ie the data is $D:=\{w_i\}_{i=1}^N$.
 
-For any additive-noise ``imaging'' model we have the likelihood
+For any additive-noise imaging model we have the likelihood
 $$
 p_\tbox{im}(w | x) = p_\tbox{noise}(w - f(x))
 $$
@@ -262,22 +274,25 @@ where $y=f(x)$ is the deterministic {\em forward model} for the image.
 $p_\tbox{noise}$ could be a Gaussian with zero mean and variance $\sigma^2$,
 another known parameter.
 See Fig.~\ref{f:graphs}(b).
-Note that this doesn't cover all cases of $p_\tbox{im}(w|x)$ such as a Poisson noise
-model.
+Note that additive doesn't cover all cases of $p_\tbox{im}(w|x)$ such as a Poisson noise model.
 
-The toy idea is to make $P$ small, eg, 1, and test
+The toy idea is to make $P$ small, eg, $P=n$ (=1 or 2), and test
 consistency for a simple map $f$, which could be the identity map.
 This would also allow tests of path-selection methods, where
-the path is 1D in $R^2$.
+the 1D path is selected in $\R^2$.
+{\em To do: write down a string method where the max likelihood for a given
+  set of nodes has its negative log taken to give a ``potential'' for that string. Its grad wrt each node gives a ``force'' on that node. The string has a time-step taken with this force, then is re-interpolated to high order onto an equi-arc-length parameterization, as in the ``improved'' string method paper, or to Chebychev nodes.}
 
-We first derive the posterior.
-
-
-
-
+We first derive the posterior $\pi(G|D)$.
 
 
-\section{Observation of images which also have latent parameters}
+
+
+
+%Note we have to set up interpolation off of nodes.
+
+
+\section{Observation of noisy images which also have latent (nuisance) parameters}
 
 The latent parameters summarized by $\theta$ include:
 rotation in SO(3), translation, and any other.
