@@ -86,6 +86,9 @@
   One conclusion is that, since the generative model has configurations living
   in a higher-dim space, then any attempt to infer using configurations
   restricted to a 1D path will be inconsistent.
+  One solution is to change the generative model to only create configurations
+  on some 1D path, which differs from the full Gibbs pdf over the full
+  configuration space used in Pilar's group's work that I know so far.
 \end{abstract}
 
 Some standard Bayesian principles:
@@ -374,6 +377,11 @@ One can only check that the $G$ recovered is some $\sigma$-blurred version
 of the true $G$ along the path.
 }
 
+One solution is to change the generative model to be configs $x$ lying
+only on a ground-truth 1D path, with a ground-truth $G$.
+Then check that 1) $G$ can be correctly recovered given the correct path,
+and 2) without knowing the path, it can be correctly found by optimization
+(see below).
 
 
 \subsection{Path optimization for the path model}
@@ -410,6 +418,11 @@ in place of the evidence $p(D)$.
 For flat prior, this is up to a constant
 just the max likelihood value $p(D|G^\ast)$.
 This is what I've suggested to Pilar's group in the full cryo-BIFE setting.
+
+To make a correct validation test, changing the generative
+model to be on some ground-truth path, and seeing if that path
+can be recovered, and the correct $G$ on it, seems to be needed.
+
 
 To finish.
 
