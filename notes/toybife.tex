@@ -384,11 +384,12 @@ path be treated as a potential energy functional for that path,
 and its grad wrt each node be taken to give the forces.
 The rest of the improved string method of E et al '07 proceeds as written.
 Recall evidence for a model (here, a path and value of $\bt$) is
-the density of the data $D$ marginalizing over unknowns (here, $\bal$):
+the predictive density of the data $D$ in the model (ie marginalizing over unknowns, here, $\bal$):
 \be
 p(D) = \int_{\R^p} p(\bal,D) d\bal = \int_{\R^p} p(D|\bal) p(\bal) d\bal
 \ee
-We can write $\bal$ and $G$ interchangeably.
+This is also the normalizing denominator for the posterior.
+As usual we write $\bal$ and $G$ interchangeably.
 
 However, the NLE isn't always easy to calculate numerically.
 In the Laplacian approximation it is: say the posterior $p(\bal|D)$ is
