@@ -1,0 +1,5 @@
+Alex code utils.
+
+For now just MATLAB function of weighted log-sum-exp to show how to
+do its stable computation. Others have reimplemented in Python
+in ../2DHsp90
