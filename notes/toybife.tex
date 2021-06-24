@@ -79,8 +79,13 @@
 
 \begin{abstract}
   We need to be able to test ideas for a Bayesian string method for path selection given cryo particle images.
-  We also need to be able to understand why Pilar+Julian's path selection is giving strange results.
+  We also need to be able to understand why Pilar+Julian's path selection is giving strange results with simulated data (eg, not finding lowest-energy paths).
+  To think clearly, one needs to set up toy models, and test that known
+  parameters can be inferred correctly by a proposed method.
   Here are some toy models and their proposed tests.
+  One conclusion is that, since the generative model has configurations living
+  in a higher-dim space, then any attempt to infer using configurations
+  restricted to a 1D path will be inconsistent.
 \end{abstract}
 
 Some standard Bayesian principles:
@@ -91,12 +96,14 @@ should be built, then unknowns in this model should be treated as
 random variables (if possible), and their posterior is then
 prescribed by this same model given the data. The posterior on the unknowns
 should be sampled, or fit (via VI), or summarized (its MAP peak found, etc).
+This is called inference on the model given the data.
 \item
 Validation should be done from data simulated from the same model,
 to ensure that the inference procedure is consistent (the true values
 fall within the inferred posterior ranges). This is the
 probabilistic
-equivalent of testing a numerical algorithm on a known solution.
+equivalent of testing a numerical algorithm on a known solution and
+making sure you get the right answer.
 \een
 
 Note that the idea of extracting a 1D path from a higher-dim conformation
@@ -105,7 +112,7 @@ already doesn't match principle 1, since the model (higher-dim conformation samp
 differs from that which will be fit (conformations restricted to a 1D path).
 
 {\em To do: consider a fix by allowing a variable transverse covariance matrix to
-be fit along with the path---why is this not of interest?}
+be fit along with the path---this would at least be closer to the believed generative model for configurations.}
 
 
 
@@ -136,10 +143,10 @@ If $n=1$ then we have an equivalent problem to inference of a
 free energy function $G(x)$ of a single variable $x$ (called $s$ in our
 paper), except its simpler because there's no projection down from higher
 dimensions.
-If $n=2$ (typical for Pilar's group), then $x$ could be $(x,y)$, for instance (CMA,CMB
+If $n=2$ (typical for Pilar's group), then $x$ could be $(x,y)$, for instance (CMA,CMB); however there is again no projection down to a 1D path.
 For general $n$, the model is: $G(x)$, $x\in\Omega$
 is an unknown smooth function over some known
-region $\Omega \subset \R^n$.
+region $\Omega \subseteq \R^n$.
 Let $\bt>0$ be the dimensionless inverse temperature.
 Conformations $x_i$ are iid sampled from the
 Boltzmann (=\,Gibbs) density. Ie, $x_1,\dots, x_N \sim \rho$, where
@@ -147,7 +154,7 @@ Boltzmann (=\,Gibbs) density. Ie, $x_1,\dots, x_N \sim \rho$, where
 \rho(x) = Z^{-1} e^{-\bt G(x)}~, \qquad x\in\Omega~,
 \label{boltz}
 \ee
-where $Z := \int_\Omega e^{-\bt G(x)} dx$.
+where $Z := Z_G := \int_\Omega e^{-\bt G(x)} dx$.
 This distribution model basically defines the concept of free energy.
 %(including for a $n=1$ path as in our paper).
 The goal is to recover $G$ in $\Omega$, up to an additive constant,
@@ -176,12 +183,16 @@ Also there are Bayesian kernel density methods (eg Sibisi--Skilling '96).
 Todo: read Dirichlet processes.
 \end{rmk}
 
-\begin{rmk}[no path optimization]
-To be clear, we don't get to test path optimization here, since if conformations
+\begin{rmk}[no 1D path]
+To be clear, we don't get to test fitting $G$ on a 1D path, or doing path optimization here, since if conformations
 come from $\R^n$, for $n>1$, they are generally inconsistent with any 1D path
 without an intermediate noise model as in the next section.
+Pilar and Erik have said
+that learning $G$ (ie $\rho$) over a $n=2$ dim or higher
+is not of interest like learning it on a 1D path---I am not sure why not.
 \end{rmk}
 
+Anyway, let's finish the description of inferring $G$ in the full space.
 The likelihood is $p(D|G) = \prod_i \rho(x_i)$, so its negative log is
 \be
 -\ln p(D|G) = \sum_i \ln \rho(x_i) = N \ln Z + \bt \sum_i G(x_i)~.
@@ -226,9 +237,10 @@ N \ln [\mbf{v}^T \exp (-\bt B \bal)]
 where $\mbf{d}$ is a data-basis vector with entries
 $d_j := \sum_i \phi_j(x_i)$ that needs computing only once.
 
-We want the posterior $\pi(G|D)$.
+We want the posterior $\pi(G|D)$, more concretely $\pi(\bal|D)$
+because one must work in some basis for $G$.
 Assuming a flat prior over $\bal$, the negative log posterior
-$U(\bal) := -\log \pi(G|D) = -\log p(D|G) + \mbox{const}$,
+$U(\bal) := -\ln \pi(G|D) = -\ln p(D|G) + \mbox{const}$,
 which is \eqref{nllbas} up to a constant.
 $U$ becomes the potential function in MCMC sampling over $\bal$.
 The MAP estimate is $\bal_*:=\arg\min_{\bal\in\R^p} U(\bal)$.
@@ -259,49 +271,178 @@ of the time.
 latent parameters}
 
 Here we use ``image'' in the abstract to mean a vector
-$w\in \R^P$ derived from a conformation $x$ with a known conditional
+$w\in \R^P$ derived from a conformation $x\in\R^n$ with a known conditional
 pdf $p_\tbox{im}(w|x)$, which is the imaging plus noise model (likelihood).
 For an image, $P$ is the number of pixels.
-The full model is now $x_i,\dots,x_N \sim \rho$, iid, then
-$w_i \sim p_\tbox{im}(\cdot | x_i)$ for each $i$.
-Only $w_i$ are observed, not $x_i$, ie the data is $D:=\{w_i\}_{i=1}^N$.
+The generative model is now
+\be
+x_i,\dots,x_N \sim \rho, \mbox{ iid, over $\R_n$, then }
+\qquad w_i \sim p_\tbox{im}(\cdot | x_i), \quad i=1,\dots, N~.
+\label{genmod2}
+\ee
+Only the data $D:=\{w_i\}_{i=1}^N$.
+are observed, not the set of conformations $X:=\{x_i\}_{i=1}^N$.
 
 For any additive-noise imaging model we have the likelihood
 $$
 p_\tbox{im}(w | x) = p_\tbox{noise}(w - f(x))
 $$
-where $y=f(x)$ is the deterministic {\em forward model} for the image.
+where $y=f(x)$ is the deterministic {\em forward model} for the image,
+given a conformation $x$.
 $p_\tbox{noise}$ could be a Gaussian with zero mean and variance $\sigma^2$,
 another known parameter.
 See Fig.~\ref{f:graphs}(b).
 Note that additive doesn't cover all cases of $p_\tbox{im}(w|x)$ such as a Poisson noise model.
 
-The toy idea is to make $P$ small, eg, $P=n$ (=1 or 2), and test
-consistency for a simple map $f$, which could be the identity map.
+The toy idea is to make $P$ small, eg, $P=n$, and test
+consistency for a simple map $f$, which could even be the identity map.
 This would also allow tests of path-selection methods, where
 the 1D path is selected in $\R^2$.
+
+Say we use the {\em same model} for inference
+(as in principle 1 at the top),
+then we are not allowed to restrict to a 1D path.
+We derive the posterior.
+The model means the joint pdf factorizes as
+\be
+p(D,X,G) = p(D|X)p(X|G)p(G)
+\label{joint}
+\ee
+Marginalizing over unobserved configurations $X$ gives
+\be
+p(D,G) = \int_{x_1\in\R^n}\dots \int_{x_N\in\R^N} p(D,X,G) dx_1\ldots dx_N ~.
+\label{marg}
+\ee
+So, also using the iid nature of \eqref{genmod2}, the posterior is generally
+$$
+\pi(G|D) \propto p(D,G) = p(D|G)p(G) = p(G) Z^{-N} \prod_i \, \int_{\R^n} p_\tbox{im}(w_i | x_i)
+e^{-\bt G(x_i)} dx_i
+$$
+One could insert a quadrature approximation over $\R^n$
+as in the previous section.
+Concretely, in the basis \eqref{basis},
+the negative log posterior would then be
+\be
+- \ln p(G|D) \approx
+- \ln p(\bal)
++
+N \ln [\mbf{v}^T \exp (-\bt B \bal)]
++
+\sum_i \ln [\mbf{l}^T_i \exp (-\bt B \bal)]
+\label{nlpbas2}
+\ee
+where for each image $i=1,\dots,N$ the data likelihood at quadrature nodes
+vector has entries
+\be
+\mbf{l}_i := \{v_q p_\tbox{in}(w_i | x_q)\}_{q=1}^Q,
+\label{li}
+\ee
+which needs computing only once (independent of $\bal$).
+This big matrix $p_\tbox{in}(w_i | x_q)$ is like a simpler (no-latent variables)
+version of $p_\tbox{BioEM}$ of Pilar.
+
+That covers inference for $G$ over $\R^n$ using the true generative model. If instead
+we fix a path $x(s)$, $s\in[0,1]$, one could write a posterior
+for $G$ (again in the $\bal$ basis) in an {\em incorrect} path model,
+which is the same as \eqref{nlpbas2}--\eqref{li}
+but with $x_q$ and $v_q$ a quadrature scheme for the 1D path.
+
+Toy test: choose $P=n=2$, $f$ the identity, and
+$p_\tbox{noise} \sim {\cal N} (0,\sigma^2 I)$,
+so
+$$
+p_\tbox{im}(w|x) = (2\pi\sigma^2)^{-n/2} e^{-\|w-x\|^2_2/2\sigma^2}
+$$
+Then ``images'' (data points) $w_i$ are
+drawn from Gaussian blobs centered on configs $x_i$.
+The big matrix $p_\tbox{in}(w_i | x_q)$ is just the Gaussian pairwise
+interactions of data points with (path) quadrature nodes, cheap to fill.
+Configs that are further than $\sigma$ from the path have little effect.
+I propose this should be tested via MCMC on $\bal$.
+If we believe that in BioEM the likelihoods drop off in some Gaussian way
+as you move a config away (in $x$ space) from the one that produced a
+particular image, then this might be a good model for the full cryo-BIFE
+path optimization.
+It may address some of the weird behavior
+Julian was seeing in cryo-BIFE path optim.
+
+{\em 
+As I keep reiterating, there is no ``ground truth'' test possible here
+where a $G$ is input and checked to be recovered correctly,
+since the path model used for fitting is not the generative model.
+One can only check that the $G$ recovered is some $\sigma$-blurred version
+of the true $G$ along the path.
+}
+
+
+
+\subsection{Path optimization for the path model}
+
+We wish to find a ``force'' vector in $\R^n$ on each quadrature node $q$ on the path.
+I propose that the {\em negative log evidence} (NLE) $-\ln p(D)$ for a given
+path be treated as a potential energy functional for that path,
+and its grad wrt each node be taken to give the forces.
+The rest of the improved string method of E et al '07 proceeds as written.
+Recall evidence for a model (here, a path and value of $\bt$) is
+the density of the data $D$ marginalizing over unknowns (here, $\bal$):
+\be
+p(D) = \int_{\R^p} p(\bal,D) d\bal = \int_{\R^p} p(D|\bal) p(\bal) d\bal
+\ee
+We can write $\bal$ and $G$ interchangeably.
+
+However, the NLE isn't always easy to calculate numerically.
+In the Laplacian approximation it is: say the posterior $p(\bal|D)$ is
+nearly Gaussian, then its integral is well approximated by the
+desntiy at the MAP times the volume factor coming from the det of the
+Hessian of $-\ln p(\bal|D)$.
+That would be saying that $G$ is well-specified by the data enough to
+be in a linear regime.
+A detail is that both these factors have to have their grad taken,
+and it's not obvious how to take the grad of a max (the MAP)---this might
+involve a Legendre xform or something.
+
+As a cruder variant to warm up with, just use the peak of joint density
+$$
+p(\bal^\ast,D) = p(D|\bal^\ast) p(\bal^\ast)
+$$
+in place of the evidence $p(D)$.
+For flat prior, this is up to a constant
+just the max likelihood value $p(D|G^\ast)$.
+This is what I've suggested to Pilar's group in the full cryo-BIFE setting.
+
+To finish.
+
 {\em To do: write down a string method where the max likelihood for a given
-  set of nodes has its negative log taken to give a ``potential'' for that string. Its grad wrt each node gives a ``force'' on that node. The string has a time-step taken with this force, then is re-interpolated to high order onto an equi-arc-length parameterization, as in the ``improved'' string method paper, or to Chebychev nodes.}
+  set of nodes has its negative log taken to give a ``potential'' for that string. Its grad wrt each node gives a ``force'' on that node. The string has a time-step taken with this force, then is re-interpolated to high order onto an equi-arc-length parameterization, as in the ``improved'' string method paper of E et al '07, or to Chebychev nodes.}
 
-We first derive the posterior $\pi(G|D)$.
-
-
-
-
-
-%Note we have to set up interpolation off of nodes.
 
 
 \section{Observation of noisy images which also have latent (nuisance) parameters}
 
+
 The latent parameters summarized by $\theta$ include:
-rotation in SO(3), translation, and any other.
+rotation in SO(3), translation, imaging system unknowns, etc.
 Each particle image $i$ gets a different draw $\theta_i$.
-See Fig.~\ref{f:graphs}(c).
+The point really was really to draw Fig.~\ref{f:graphs}(c)
+and compare its structure to the simpler toy models.
 This is as in cryo-BIFE.
-It has the complication that $\theta$ must be marginalized over.
+It has the complication that $\theta$ must be marginalized over
+when filling the big matrix $p_\tbox{in}(w_i | x_q)$, which is now
+$p_\tbox{BioEM}$ of Pilar.
 
+To test, a toy set of latent parameters
+could be used in a slight variant of the toy case from section 2.
 
+To do.
+
+\subsection{Path optimization for the path model}
+
+To do.
+
+In order to prevent the multi-hour computation of $p_\tbox{BioEM}$ each
+time the path is changed, we have to precompute it to a set of $x$ on a
+grid covering $\Omega \subset \R^n$,
+interpolate the log likelihoods from this grid.
 
 
 
