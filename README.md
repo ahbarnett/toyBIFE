@@ -1,11 +1,11 @@
 # toyBIFE
-simple experiments in Bayesian inference of free energy and path selection for cryo-EM, for collaboration with Pilar Cossio and group.
+simple proposals and experiments in Bayesian inference of free energy and path selection for cryo-EM.
 
-Alex Barnett, June 2021.
+Alex Barnett, Pilar Cossio, et al...   June 2021.
 
-See ``notes`` and ``code``.
+See ``notes`` and ``utils`` for Alex's stuff.
 
-Added a new folder **2DHsp90** with 3 subfolders:
+Pilar's group added a new folder **2DHsp90** with 3 subfolders:
 
 ## FES: Data for vizualizing the 2D distribution or free energy surface.
 Files in folder:
